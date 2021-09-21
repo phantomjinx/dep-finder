@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+
+MIN_JDEPS_VERSION=11
+ARGS=("$@")
+
+# Dir where this script is located
+basedir() {
+    # Default is current directory
+    local script=${BASH_SOURCE[0]}
+
+    # Resolve symbolic links
+    if [ -L $script ]; then
+        if readlink -f $script >/dev/null 2>&1; then
+            script=$(readlink -f $script)
+        elif readlink $script >/dev/null 2>&1; then
+            script=$(readlink $script)
+        elif realpath $script >/dev/null 2>&1; then
+            script=$(realpath $script)
+        else
+            echo "ERROR: Cannot resolve symbolic link $script"
+            exit 1
+        fi
+    fi
+
+    local dir=$(dirname "$script")
+    local full_dir=$(cd "${dir}" && pwd)
+    echo ${full_dir}
+}
+
+source "$(basedir)/lib/help.sh"
+source "$(basedir)/lib/utils.sh"
+source "$(basedir)/lib/jdeps.sh"
+source "$(basedir)/lib/docker.sh"
+source "$(basedir)/lib/maven.sh"
+
+if [ $(hasflag --jar -j) ]; then
+  JDEPS=$(jdeps_is_available)
+fi
+
+if [ "$(contains_error ${JDEPS})" == "YES" ]; then
+  echo "${JDEPS}"
+  exit 1
+fi
+
+if [ $(hasflag --help -h) ]; then
+  do_help
+elif [ $(hasflag --image -i) ]; then
+  DOCKER=$(docker_is_available)
+  if [ "$(contains_error ${DOCKER})" == "YES" ]; then
+    echo ${DOCKER}
+    exit 1
+  fi
+
+  do_image "$(readopt --image -i)"
+elif [ $(hasflag --jar -j) ]; then
+  do_jar "$(readopt --jar -j)"
+elif [ $(hasflag --pom -p) ]; then
+  MAVEN=$(maven_is_available)
+  if [ "$(contains_error ${MAVEN})" == "YES" ]; then
+    echo ${MAVEN}
+    exit 1
+  fi
+
+  do_pom "$(readopt --pom -p)"
+else
+  echo "ERROR: invalid command. See help for details.'"
+fi

@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then
+  echo "$0 <string-to-find>"
+  exit 1
+fi
+
+for f in `find ${PWD}/ -name pom.xml | grep -v target`
+do
+  content=$(grep $1 $f)
+  if [ -n "${content}" ]; then
+    echo ${f}
+    echo ${content}
+    echo "---"
+  fi
+done
