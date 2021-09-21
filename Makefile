@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Copyright (C) 2021 Paul Richardson
 # This file is part of dep-finder <https://github.com/phantomjinx/dep-finder>.
 #
@@ -16,17 +14,18 @@
 # You should have received a copy of the GNU General Public License
 # along with dep-finder.  If not, see <http://www.gnu.org/licenses/>.
 
-if [ -z "$1" ]; then
-  echo "$0 <string-to-find>"
-  exit 1
-fi
+NAME := dep-finder
+VERSION := 0.0.1
 
-for f in `find ${PWD}/ -name pom.xml | grep -v target`
-do
-  content=$(grep $1 $f)
-  if [ -n "${content}" ]; then
-    echo ${f}
-    echo ${content}
-    echo "---"
-  fi
-done
+PREFIX ?= /usr/local
+BIN := $(PREFIX)/bin
+LIB := $(PREFIX)/share/dep-finder/lib
+
+install:
+	@cp dep-finder $(BIN)
+	@mkdir -p $(LIB) && cp -rf lib/* $(LIB)/
+	@sed -i 's~LIB=.*~LIB=$(LIB)~' $(BIN)/dep-finder
+
+uninstall:
+	@rm -f $(BIN)/dep-finder
+	@rm -rf $(LIB)

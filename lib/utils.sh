@@ -1,5 +1,21 @@
 #!/usr/bin/env bash
 
+# Copyright (C) 2021 Paul Richardson
+# This file is part of dep-finder <https://github.com/phantomjinx/dep-finder>.
+#
+# dep-finder is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# dep-finder is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with dep-finder.  If not, see <http://www.gnu.org/licenses/>.
+
 # Read the value of an option.
 readopt() {
   filters="$@"
