@@ -1,0 +1,99 @@
+#!/bin/bash
+
+LAYER_DIRS=()
+TRIAGE="./triage"
+
+contains_error() {
+  local msg="${1:-}"
+
+  #
+  # Uppercase the msg to determine if it contains ERROR
+  #
+  if awk 'BEGIN {exit !index(toupper(ARGV[2]), toupper(ARGV[1]))}' "ERROR" "$1"; then
+      echo "YES"
+  else
+      echo "NO"
+  fi
+}
+
+get_layer_dir() {
+  local img="${1:-}"
+  local layer="${2:-}"
+
+  if [ -z "${img}" ]; then
+    echo "ERROR: No image to get layer from"
+    return
+  fi
+
+  if [ -z "${layer}" ]; then
+    echo "ERROR: No layer specified"
+    return
+  fi
+
+  local temp=()
+  IFS=':' read -ra temp <<< $(docker inspect ${img} | jq -r .[].GraphDriver.Data.${layer})
+  for t in "${temp[@]}"; do
+    LAYER_DIRS+=($t)
+  done
+}
+
+
+if [ -z "$1" ]; then
+  echo "$0 <container image>"
+  exit 1
+fi
+
+IMAGE="$1"
+
+if [ -z "${TRIAGE}" ]; then
+  echo "TRIAGE var cannot be empty ... This is dangerous!"
+  exit 1
+fi
+    
+docker pull $IMAGE
+if [ $? != "0" ]; then
+  echo "Failed to pull image $IMAGE"
+  exit 1
+fi
+
+get_layer_dir $IMAGE "LowerDir"
+get_layer_dir $IMAGE "MergedDir"
+get_layer_dir $IMAGE "UpperDir"
+get_layer_dir $IMAGE "WorkDir"
+
+if [ -d "${TRIAGE}" ]; then
+  rm -rf "${TRIAGE}"
+fi
+mkdir -p $TRIAGE
+
+for layerd in "${LAYER_DIRS[@]}"; do
+  if [ ! -d "${layerd}" ]; then
+    continue
+  fi
+
+  files=$(find ${layerd} | sort | uniq)
+
+  for sf in ${files}
+  do
+    # Avoid any wildcard directory entries
+    if [[ "${sf}" =~ "*" ]]; then
+      continue
+    fi
+
+    # Snip off the docker overlay prefix path
+    pf=$(echo ${sf} | sed "s~${layerd}~~")
+    if [ -z "${pf}" ]; then
+      continue
+    fi
+
+    # Make directory structure for file
+    tgtdir="${TRIAGE}$(dirname ${pf})"
+    mkdir -p "${tgtdir}"
+
+    if [ -f "${sf}" ]; then
+      echo "Copying ${sf} -> ${tgtdir}"
+      cp ${sf} ${tgtdir}/
+    fi
+
+  done 
+done
