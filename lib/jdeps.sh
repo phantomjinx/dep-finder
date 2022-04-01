@@ -167,6 +167,7 @@ do_jar() {
   # not already listed as they are runtime dependencies
   #
 
+  cplist=""
   for cpjar in ${CLASSPATH//:/ }
   do
     j=$(basename "${cpjar}")
@@ -175,8 +176,10 @@ do_jar() {
       continue
     fi
 
-    echo "${j}"
+    cplist=$(printf '%s\n%s' "${cplist}" "${j}")
   done
+
+  echo "${cplist}" | sort
 
   popd >/dev/null
 }
